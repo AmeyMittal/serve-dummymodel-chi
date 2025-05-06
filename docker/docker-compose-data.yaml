@@ -1,49 +1,30 @@
 version: '3'
 volumes:
-  food11:
-    external: true # Uses externally created volume
+  whisperdata:
+    external: true  # Uses externally created volume
 
 services:
-  init-data:
+  init-dummydata:
     image: python:3.11
     volumes:
-      - food11:/data
+      - whisperdata:/data
     working_dir: /data
     command: >
       bash -c "
-      set -e # Stop on error
-      echo 'Creating dataset directory...'
-      mkdir -p /data/food-11 && cd /data/food-11
+      set -e
+      echo 'Creating dummy dataset directory...'
+      mkdir -p /data/whisper-dummy && cd /data/whisper-dummy
 
-      echo 'Downloading dataset...'
-      curl -L https://my.box.com/shared/static/nskwc12shfp1j3leblhuk82y2wdlopi4.zip --output food-11.zip
+      echo 'Downloading sample mp3...'
+      curl -L https://file-examples.com/wp-content/uploads/2017/11/file_example_MP3_700KB.mp3 --output sample1.mp3
 
-      echo 'Extracting dataset...'
-      unzip food-11.zip
-      rm food-11.zip
+      echo 'Copying to sample2 and sample3...'
+      cp sample1.mp3 sample2.mp3
+      cp sample1.mp3 sample3.mp3
 
-      echo 'Organizing dataset...'
-      python3 - <<EOF
-import os
-import shutil
+      echo 'Creating transcript file...'
+      echo -e 'sample1.mp3|Hello world\nsample2.mp3|Welcome to Whisper\nsample3.mp3|Testing transcription' > transcripts.txt
 
-dataset_base_dir = '/data/food-11'
-subdirs = ['training', 'validation', 'evaluation']
-classes = ['Bread', 'Dairy product', 'Dessert', 'Egg', 'Fried food', 'Meat', 'Noodles/Pasta', 'Rice', 'Seafood', 'Soup', 'Vegetable/Fruit']
-
-for subdir in subdirs:
-    dir_path = os.path.join(dataset_base_dir, subdir)
-    if not os.path.exists(dir_path):
-        continue
-    for i in range(len(classes)):
-        class_dir = os.path.join(dir_path, f'class_{i:02d}')
-        os.makedirs(class_dir, exist_ok=True)
-        files = [f for f in os.listdir(dir_path) if f.startswith(f'{i}_')]
-        for f in files:
-            shutil.move(os.path.join(dir_path, f), os.path.join(class_dir, f))
-
-print('Dataset setup complete.')
-EOF
+      echo 'Dummy dataset setup complete.'
       "
     restart: "no"
-
